@@ -2684,14 +2684,33 @@
         }
 
         function saveApiKey() {
-            apiKey = document.getElementById('apiKeyInput').value.trim();
-            if (apiKey) {
-                localStorage.setItem('youtube_api_key', apiKey);
+            const newApiKey = document.getElementById('apiKeyInput').value.trim();
+            if (newApiKey) {
+                apiKey = newApiKey; // 글로벌 변수 업데이트
+                localStorage.setItem('youtube-api-key', apiKey);
                 closeApiSettings();
                 alert('API 키가 저장되었습니다!');
             } else {
                 alert('유효한 API 키를 입력해주세요.');
             }
+        }
+
+        // API 키 확인 헬퍼 함수
+        function getApiKey() {
+            // 먼저 글로벌 변수 확인, 없으면 localStorage에서 다시 로드
+            if (!apiKey) {
+                apiKey = localStorage.getItem('youtube-api-key') || '';
+            }
+            return apiKey;
+        }
+
+        function checkApiKey() {
+            const currentApiKey = getApiKey();
+            if (!currentApiKey) {
+                alert('API 키를 설정해주세요.');
+                return false;
+            }
+            return true;
         }
 
         // Utility functions
@@ -2732,10 +2751,10 @@
 
         // Video search function
         async function searchVideos() {
-            if (!apiKey) {
-                alert('API 키를 설정해주세요.');
+            if (!checkApiKey()) {
                 return;
             }
+            const currentApiKey = getApiKey();
 
             // 키워드 시스템에서 검색어 가져오기
             const query = youtubeApp ? youtubeApp.getSearchQuery() : document.getElementById('searchQuery').value.trim();
@@ -2751,7 +2770,7 @@
             showLoading('searchLoading', true);
 
             try {
-                let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&order=${order}&maxResults=${maxResults}&key=${apiKey}`;
+                let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&order=${order}&maxResults=${maxResults}&key=${currentApiKey}`;
                 
                 if (publishedAfter) {
                     url += `&publishedAfter=${publishedAfter}`;
@@ -2771,7 +2790,7 @@
                 // Get video statistics
                 const videoIds = data.items.map(item => item.id.videoId).join(',');
                 const statsResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${apiKey}`
+                    `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${currentApiKey}`
                 );
                 const statsData = await statsResponse.json();
 
@@ -2840,10 +2859,10 @@
 
         // Competitor analysis
         async function analyzeCompetitor() {
-            if (!apiKey) {
-                alert('API 키를 설정해주세요.');
+            if (!checkApiKey()) {
                 return;
             }
+            const currentApiKey = getApiKey();
 
             const channelName = document.getElementById('competitorChannel').value.trim();
             const analysisType = document.getElementById('competitorAnalysisType').value;
@@ -2858,7 +2877,7 @@
             try {
                 // Search for channels
                 const searchResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(channelName)}&type=channel&maxResults=3&key=${apiKey}`
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(channelName)}&type=channel&maxResults=3&key=${currentApiKey}`
                 );
                 const searchData = await searchResponse.json();
 
@@ -2878,7 +2897,7 @@
                     
                     // Get detailed channel info
                     const channelResponse = await fetch(
-                        `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${apiKey}`
+                        `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${currentApiKey}`
                     );
                     const channelData = await channelResponse.json();
                     
@@ -2886,7 +2905,7 @@
                     
                     // Get recent videos
                     const videosResponse = await fetch(
-                        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=50&key=${apiKey}`
+                        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=50&key=${currentApiKey}`
                     );
                     const videosData = await videosResponse.json();
                     
@@ -2898,7 +2917,7 @@
                     
                     if (videoIds) {
                         const videoStatsResponse = await fetch(
-                            `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${apiKey}`
+                            `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${currentApiKey}`
                         );
                         const statsData = await videoStatsResponse.json();
                         videoStats = statsData.items || [];
@@ -3207,10 +3226,10 @@
 
         // Trending analysis
         async function analyzeTrending() {
-            if (!apiKey) {
-                alert('API 키를 설정해주세요.');
+            if (!checkApiKey()) {
                 return;
             }
+            const currentApiKey = getApiKey();
 
             const categoryId = document.getElementById('trendingCategory').value;
             const regionCode = document.getElementById('trendingRegion').value;
@@ -3218,7 +3237,7 @@
             showLoading('trendingLoading', true);
 
             try {
-                let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${regionCode}&maxResults=50&key=${apiKey}`;
+                let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${regionCode}&maxResults=50&key=${currentApiKey}`;
                 
                 if (categoryId) {
                     url += `&videoCategoryId=${categoryId}`;
@@ -3418,10 +3437,10 @@
 
         // Channel analysis
         async function analyzeChannel() {
-            if (!apiKey) {
-                alert('API 키를 설정해주세요.');
+            if (!checkApiKey()) {
                 return;
             }
+            const currentApiKey = getApiKey();
 
             const channelName = document.getElementById('channelName').value.trim();
             const period = parseInt(document.getElementById('channelPeriod').value);
@@ -3436,7 +3455,7 @@
             try {
                 // Search for channel
                 const searchResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(channelName)}&type=channel&maxResults=1&key=${apiKey}`
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(channelName)}&type=channel&maxResults=1&key=${currentApiKey}`
                 );
                 const searchData = await searchResponse.json();
 
@@ -3452,7 +3471,7 @@
                 
                 // Get detailed channel info
                 const channelResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${apiKey}`
+                    `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${currentApiKey}`
                 );
                 const channelData = await channelResponse.json();
                 
@@ -3461,7 +3480,7 @@
                 cutoffDate.setDate(cutoffDate.getDate() - period);
                 
                 const videosResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=50&publishedAfter=${cutoffDate.toISOString()}&key=${apiKey}`
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=50&publishedAfter=${cutoffDate.toISOString()}&key=${currentApiKey}`
                 );
                 const videosData = await videosResponse.json();
                 
@@ -3472,7 +3491,7 @@
                 // Get video statistics
                 const videoIds = videosData.items.map(item => item.id.videoId).join(',');
                 const videoStatsResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${apiKey}`
+                    `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${currentApiKey}`
                 );
                 const videoStatsData = await videoStatsResponse.json();
                 
@@ -3821,6 +3840,7 @@
         }
 
         async function generateRelatedKeywords(seedKeyword, count) {
+            const currentApiKey = getApiKey();
             // Generate variations of the seed keyword
             const variations = [
                 `${seedKeyword} 튜토리얼`,
@@ -3853,7 +3873,7 @@
                 
                 try {
                     const response = await fetch(
-                        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&maxResults=10&key=${apiKey}`
+                        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&maxResults=10&key=${currentApiKey}`
                     );
                     const data = await response.json();
                     
@@ -3861,7 +3881,7 @@
                         // Get video statistics to calculate metrics
                         const videoIds = data.items.map(item => item.id.videoId).join(',');
                         const statsResponse = await fetch(
-                            `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${apiKey}`
+                            `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${currentApiKey}`
                         );
                         const statsData = await statsResponse.json();
                         
@@ -3893,8 +3913,9 @@
 
         async function findTrendingKeywords(seedKeyword, count) {
             // Get trending videos and extract keywords related to seed
+            const currentApiKey = getApiKey();
             const response = await fetch(
-                `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=KR&maxResults=50&key=${apiKey}`
+                `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=KR&maxResults=50&key=${currentApiKey}`
             );
             const data = await response.json();
             
@@ -3925,7 +3946,7 @@
             for (const keyword of keywordArray) {
                 try {
                     const searchResponse = await fetch(
-                        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&maxResults=5&key=${apiKey}`
+                        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&maxResults=5&key=${currentApiKey}`
                     );
                     const searchData = await searchResponse.json();
                     
@@ -3956,8 +3977,9 @@
 
         async function analyzeCompetitorKeywords(seedKeyword, count) {
             // Search for channels related to seed keyword
+            const currentApiKey = getApiKey();
             const channelResponse = await fetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(seedKeyword)}&type=channel&maxResults=5&key=${apiKey}`
+                `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(seedKeyword)}&type=channel&maxResults=5&key=${currentApiKey}`
             );
             const channelData = await channelResponse.json();
             
@@ -3973,7 +3995,7 @@
                 
                 // Get channel's recent videos
                 const videosResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=20&key=${apiKey}`
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=20&key=${currentApiKey}`
                 );
                 const videosData = await videosResponse.json();
                 
@@ -4012,7 +4034,7 @@
             for (const keyword of topKeywords) {
                 try {
                     const searchResponse = await fetch(
-                        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&maxResults=10&key=${apiKey}`
+                        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&maxResults=10&key=${currentApiKey}`
                     );
                     const searchData = await searchResponse.json();
                     
