@@ -2548,17 +2548,39 @@
             if (youtubeApp && typeof youtubeApp.updateApiStatus === 'function') {
                 youtubeApp.updateApiStatus();
             }
+
+            // 페이지 로드 시 API 연결 상태 자동 확인
+            const currentApiKey = getApiKey();
+            if (currentApiKey) {
+                console.log('🔍 API 연결 상태 확인 중...');
+                testApiConnection(currentApiKey).then(isValid => {
+                    if (isValid) {
+                        console.log('✅ API 연결 상태: 정상');
+                    } else {
+                        console.warn('⚠️ API 연결 상태: 실패 - API 키를 확인해주세요');
+                    }
+                });
+            }
+
             loadAnalyticsData();
             
-            // Add search form event listener
-            const searchForm = document.createElement('form');
-            searchForm.id = 'search-form';
-            searchForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                if (youtubeApp) {
-                    youtubeApp.performSearch();
-                }
-            });
+            // Add search form event listener to existing form
+            const searchForm = document.getElementById('search-form');
+            if (searchForm) {
+                console.log('✅ Search form found and event listener attached');
+                searchForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    console.log('🔍 Search form submitted');
+                    if (youtubeApp) {
+                        console.log('📱 YouTube app available, calling performSearch');
+                        youtubeApp.performSearch();
+                    } else {
+                        console.error('❌ YouTube app not available');
+                    }
+                });
+            } else {
+                console.error('❌ Search form not found');
+            }
         });
 
         // Wrapper functions for backward compatibility
@@ -2688,10 +2710,44 @@
             if (newApiKey) {
                 apiKey = newApiKey; // 글로벌 변수 업데이트
                 localStorage.setItem('youtube-api-key', apiKey);
-                closeApiSettings();
-                alert('API 키가 저장되었습니다!');
+
+                // YouTube 클래스의 API 키도 업데이트
+                if (youtubeApp) {
+                    youtubeApp.apiKey = apiKey;
+                    youtubeApp.updateApiStatus();
+                }
+
+                // API 키 자동 테스트
+                testApiConnection(apiKey).then(isValid => {
+                    closeApiSettings();
+                    if (isValid) {
+                        alert('✅ API 키가 저장되고 연결이 확인되었습니다!');
+                    } else {
+                        alert('⚠️ API 키가 저장되었지만 연결에 실패했습니다. API 키를 다시 확인해주세요.');
+                    }
+                });
             } else {
                 alert('유효한 API 키를 입력해주세요.');
+            }
+        }
+
+        // API 연결 테스트 함수
+        async function testApiConnection(apiKey) {
+            try {
+                const testUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=test&maxResults=1&key=${apiKey}`;
+                const response = await fetch(testUrl);
+                const data = await response.json();
+
+                if (response.ok && !data.error) {
+                    console.log('✅ API 연결 성공');
+                    return true;
+                } else {
+                    console.error('❌ API 연결 실패:', data.error?.message || 'Unknown error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ API 연결 테스트 중 오류:', error);
+                return false;
             }
         }
 
